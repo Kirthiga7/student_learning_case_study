@@ -7,10 +7,12 @@ USE DATABASE training;
 
 CREATE SCHEMA dev;
 ```
-SELECT * FROM student_learning;
+IMPORT data from dataset
 
 **Explore Data**
 ```sql
+SELECT * FROM student_learning;
+
 SELECT DISTINCT gender FROM student_learning;
 SELECT DISTINCT course_name FROM student_learning;
 SELECT DISTINCT learning_style FROM student_learning;
