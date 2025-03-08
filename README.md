@@ -1,1 +1,175 @@
 # student_learning_case_study
+
+**Create database and schema**
+CREATE DATABASE training;
+USE DATABASE training;
+
+CREATE SCHEMA dev;
+
+SELECT * FROM student_learning;
+
+**Explore Data**
+```sql
+SELECT DISTINCT gender FROM student_learning;
+SELECT DISTINCT course_name FROM student_learning;
+SELECT DISTINCT learning_style FROM student_learning;
+```
+1. Identify all the undergraduate students and display their id, gender and course name.
+```sql
+SELECT student_id, gender, course_name
+FROM student_learning
+WHERE education_level = 'Undergraduate';
+```
+2. Fetch details of female students who spent over 300 mins on videos and have high possibility of dropping out.
+```sql
+SELECT *
+FROM student_learning
+WHERE gender = 'Female' 
+AND time_spent_on_videos > 300
+AND  dropout_likelihood = 'True';
+```
+3. Identify students who have either taken Machine Learning or Data Science course and have at least attempted couple of quiz or have scored over 60 in quiz. Sort data based on least forum participation
+```sql
+SELECT *
+FROM student_learning
+WHERE course_name IN ('Machine Learning','Data Science')
+AND ( quiz_attempts >= 2 OR quiz_scores > 60 )
+ORDER BY forum_participation;
+```
+4. How many students prefer learning through visuals
+```sql
+SELECT COUNT(*) AS no_of_students
+FROM student_learning
+WHERE learning_style = 'Visual';
+```
+5. What is the minimum and maximum exam score by students with the highest assignment completion rate?
+```sql
+SELECT MAX(quiz_scores) AS max_score, MIN(quiz_scores) AS min_score
+FROM student_learning
+WHERE assignment_completion_rate = ( SELECT MAX(assignment_completion_rate) FROM student_learning );
+```
+6. What is the average age of all Postgraduate or Undergraduate female students who took Cybersecurity course and either had High engagement level or Student Learning Case Study1 preferred learning through writing or actively participated in at-least 20 forums. return whole number.
+```sql
+SELECT SPLIT_PART(AVG(age),'.',1) AS avg_age    --SPLIT_PART(string, delimiter, position)
+FROM student_learning
+WHERE gender = 'Female'
+AND education_level IN ('Undergraduate','Postgraduate')
+AND course_name = 'Cybersecurity'
+AND ( engagement_level = 'High' 
+      OR learning_style LIKE '%writing%'
+      OR forum_participation >= 20) ;
+```
+7.Identify all the male postgraduate student or female undergraduate student with final score over 90. Output should contains 2 columns, 1 with the student id and second column should indicate male postgraduate student as "Master degree" and female undergraduate student as "Bachelor degree"
+```sql
+SELECT student_id, 
+       CASE WHEN gender = 'Male' THEN 'Master degree'
+       ELSE 'Bachelor degree'
+       END AS degree
+FROM student_learning
+WHERE (gender = 'Male' AND education_level = 'Postgraduate' AND quiz_scores > 90)
+OR (gender = 'Female' AND education_level = 'Undergraduate'AND quiz_scores > 90);
+```
+8.What is the average time spent on watching videos based on education level? Consider only those students whose age is a even number. Round the value to a single decimal point.
+```sql
+SELECT education_level, ROUND(AVG(time_spent_on_videos),1) AS avg_age
+FROM student_learning
+WHERE age%2 = 0
+GROUP BY education_level;
+```
+9.Identify the most popular male and female student among teachers. Popularity is based on students scoring the hight exam score and highest assignment_completion_rate.
+```sql
+SELECT student_id, assignment_completion_rate, quiz_scores,gender
+FROM student_learning
+WHERE assignment_completion_rate = (SELECT MAX(assignment_completion_rate) FROM student_learning)
+AND quiz_scores = (SELECT MAX(quiz_scores) FROM student_learning)
+AND gender IN ('Male','Female');
+
+SELECT student_id, assignment_completion_rate, quiz_scores,gender
+FROM student_learning
+WHERE (assignment_completion_rate = (SELECT MAX(assignment_completion_rate) FROM student_learning)
+     AND quiz_scores = (SELECT MAX(quiz_scores) FROM student_learning)
+     AND gender = 'Male')
+OR (assignment_completion_rate = (SELECT MAX(assignment_completion_rate) FROM student_learning)
+     AND quiz_scores = (SELECT MAX(quiz_scores) FROM student_learning)
+     AND gender = 'Female');
+```
+10.How many male, female and other students have never participated in a forum with bare minimum quiz attempts and have low engagement level. Result should be 3 columns, 1 each for each gender.
+```sql
+SELECT gender, COUNT(*) AS no_of_participant
+FROM student_learning
+WHERE forum_participation = 0
+AND quiz_attempts = (SELECT MIN(quiz_attempts) FROM student_learning)
+AND engagement_level = 'Low'
+GROUP BY gender; --gender is in row
+
+/* SELECT CASE WHEN gender = 'Male' THEN 1 ELSE 0 END AS male,
+          CASE WHEN gender = 'Female' THEN 1 ELSE 0 END AS female,
+          CASE WHEN gender = 'Other' THEN 1 ELSE 0 END AS other
+   FROM student_learning
+   WHERE forum_participation = 0
+   AND quiz_attempts = (SELECT MIN(quiz_attempts) FROM student_learning)
+   AND engagement_level = 'Low';  */
+
+SELECT SUM(CASE WHEN gender = 'Male' THEN 1 ELSE 0 END) AS male,
+       SUM(CASE WHEN gender = 'Female' THEN 1 ELSE 0 END) AS female,
+       SUM(CASE WHEN gender = 'Other' THEN 1 ELSE 0 END) AS other
+FROM student_learning
+WHERE forum_participation = 0
+AND quiz_attempts = (SELECT MIN(quiz_attempts) FROM student_learning)
+AND engagement_level = 'Low';
+```
+11.How many students have taken python, machine learning and data science course?
+```sql
+SELECT course_name, COUNT(*) AS no_of_student
+FROM student_learning
+WHERE course_name IN ('Python Basics','Machine Learning','Data Science')
+GROUP BY course_name;
+```
+12.Identify the courses that are taken by more than 2000 students.
+```sql
+SELECT course_name, COUNT(*) AS no_of_students
+FROM student_learning
+GROUP BY course_name
+HAVING no_of_students > 2000;
+```
+13.What is the preferred course and learning style of students over 40 yrs of age.
+```sql
+SELECT * FROM(
+    SELECT course_name, 'Course' AS preferred
+    FROM student_learning
+    WHERE age > 40
+    GROUP BY course_name
+    ORDER BY COUNT(1) DESC 
+    LIMIT 1)
+UNION
+SELECT * FROM(
+    SELECT learning_style, 'Learning Style' AS preferred
+    FROM student_learning
+    WHERE age > 40
+    GROUP BY learning_style
+    ORDER BY COUNT(1) DESC 
+    LIMIT 1);
+```
+14.Provide a summary of all the courses. How many students have taken each of them but segregate them based on gender.
+```sql
+SELECT gender, course_name, COUNT(*) AS no_of_student
+FROM student_learning
+GROUP BY gender, course_name
+ORDER BY gender, course_name;
+
+SELECT course_name,
+       SUM(CASE WHEN gender = 'Male' THEN 1 ELSE 0 END) AS male,
+       SUM(CASE WHEN gender = 'Female' THEN 1 ELSE 0 END) AS female,
+       SUM(CASE WHEN gender = 'Other' THEN 1 ELSE 0 END) AS other
+FROM student_learning
+GROUP BY course_name;
+```
+15.Identify the most popular courses, between the age group of 15-25, 26-40 and >40. Course popularity is based on how many students have taken it. Output should be 3 columns specific to each age group.
+```sql
+SELECT course_name, 
+       SUM(CASE WHEN age > 15 AND age < 25 THEN 1 ELSE 0 END) AS age_15_25,
+       SUM(CASE WHEN age > 26 AND age < 40 THEN 1 ELSE 0 END) AS age_26_40,
+       SUM(CASE WHEN age > 40 THEN 1 ELSE 0 END) AS age_above_40
+FROM student_learning
+GROUP BY course_name;
+```
