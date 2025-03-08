@@ -1,11 +1,12 @@
 # student_learning_case_study
 
 **Create database and schema**
+```sql
 CREATE DATABASE training;
 USE DATABASE training;
 
 CREATE SCHEMA dev;
-
+```
 SELECT * FROM student_learning;
 
 **Explore Data**
